@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Agent Portal</h1>
+        <div id="auth-section">
+            <div id="login-form">
+                <h2>Login</h2>
+                <form id="login">
+                    <input type="email" id="login-email" name="email" placeholder="Email" required>
+                    <input type="password" id="login-password" name="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+            </div>
+            <div id="register-form" class="hidden">
+                <h2>Register</h2>
+                <form id="register">
+                    <input type="text" id="reg-name" name="name" placeholder="Name" required>
+                    <input type="email" id="reg-email" name="email" placeholder="Email" required>
+                    <input type="password" id="reg-password" name="password" placeholder="Password" required>
+                    <input type="text" id="reg-location" name="location" placeholder="Location" required>
+                    <button type="submit">Register</button>
+                </form>
+                <p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+            </div>
+        </div>
+        <div id="dashboard" class="hidden">
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+            <h1>🏢 Agent Dashboard</h1>
+            <div class="dashboard">
+                <div class="section" id="profile-section">
+                    <h2>My Profile</h2>
+                    <div id="profile"></div>
+                </div>
+                <div class="section" id="clients-section">
+                    <h2>My Clients</h2>
+                    <div id="clients"></div>
+                </div>
+                <div class="section" id="properties-section">
+                    <h2>🏠 My Properties</h2>
+                    <button class="create-activity-btn" onclick="showCreateProperty()">➕ Create Property</button>
+                    <div id="properties"></div>
+                </div>
+                <div class="section" id="deals-section">
+                    <h2>🤝 My Deals</h2>
+                    <button class="create-activity-btn" onclick="showCreateDeal()">➕ Create Deal</button>
+                    <div id="deals"></div>
+                </div>
+                <div class="section" id="activities-section">
+                    <h2>📋 Activities</h2>
+                    <button class="create-activity-btn" onclick="showCreateActivity()">➕ Create Activity</button>
+                    <div id="activities"></div>
+                </div>
+                <div class="section" id="notifications-section">
+                    <h2>🔔 Notifications</h2>
+                    <div id="notifications"></div>
+                </div>
+            </div>
+        </div>
+        <div id="create-activity-form" class="hidden">
+            <h2>Create Activity</h2>
+            <form id="activity-form">
+                <input type="text" id="activity-type" name="type" placeholder="Type" required>
+                <textarea id="activity-description" name="description" placeholder="Description" required></textarea>
+                <input type="date" id="activity-date" name="date" required>
+                <button type="submit">Create</button>
+                <button type="button" onclick="hideCreateActivity()">Cancel</button>
+            </form>
+        </div>
+        <div id="create-property-form" class="hidden">
+            <h2>Create Property</h2>
+            <form id="property-form">
+                <input type="text" id="property-title" name="title" placeholder="Title" required>
+                <input type="text" id="property-location" name="location" placeholder="Location" required>
+                <input type="number" id="property-price" name="price" placeholder="Price" required>
+                <button type="submit">Create</button>
+                <button type="button" onclick="hideCreateProperty()">Cancel</button>
+            </form>
+        </div>
+        <div id="create-deal-form" class="hidden">
+            <h2>Create Deal</h2>
+            <form id="deal-form">
+                <select id="deal-client" name="client" required>
+                    <option value="">Select Client</option>
+                </select>
+                <select id="deal-property" name="property" required>
+                    <option value="">Select Property</option>
+                </select>
+                <button type="submit">Create</button>
+                <button type="button" onclick="hideCreateDeal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        function showRegister() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+        }
+
+        document.getElementById('login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                email: document.getElementById('login-email').value,
+                password: document.getElementById('login-password').value
+            };
+            try {
+                const result = await apiCall('/users/login', 'POST', data);
+                localStorage.setItem('token', result.accessToken);
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                loadDashboard();
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        });
+
+        document.getElementById('register').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('reg-name').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value,
+                location: document.getElementById('reg-location').value,
+                role: 'AGENT'
+            };
+            try {
+                await apiCall('/users/register', 'POST', data);
+                alert('Registration successful. Please login.');
+                showLogin();
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+
+        async function loadDashboard() {
+            try {
+                const profile = await apiCall('/agents/get-my-profile');
+                document.getElementById('profile').innerHTML = `<p>Name: ${profile.name}</p><p>Email: ${profile.email}</p><p>Location: ${profile.location}</p>`;
+
+                const clients = await apiCall('/clients/get-clients');
+                document.getElementById('clients').innerHTML = '<table><tr><th>Name</th><th>Email</th><th>Status</th></tr>' +
+                    clients.map(c => `<tr><td>${c.name}</td><td>${c.email}</td><td>${c.status}</td></tr>`).join('') + '</table>';
+
+                const properties = await apiCall('/properties/get-properties');
+                document.getElementById('properties').innerHTML = '<table><tr><th>Title</th><th>Location</th><th>Price</th><th>Owner</th></tr>' +
+                    properties.map(p => `<tr><td>${p.title}</td><td>${p.location}</td><td>${p.price}</td><td>${p.owner?.name || 'N/A'}</td></tr>`).join('') + '</table>';
+
+                const deals = await apiCall('/deals/get-deals');
+                document.getElementById('deals').innerHTML = '<table><tr><th>Client</th><th>Property</th><th>Status</th><th>Amount</th></tr>' +
+                    deals.map(d => `<tr><td>${d.client.name}</td><td>${d.property.title}</td><td>${d.status}</td><td>${d.amount || 'N/A'}</td></tr>`).join('') + '</table>';
+
+                const activities = await apiCall('/activities/get-my-activities');
+                document.getElementById('activities').innerHTML = '<table><tr><th>Type</th><th>Description</th><th>Date</th></tr>' +
+                    activities.map(a => `<tr><td>${a.type}</td><td>${a.description}</td><td>${a.date}</td></tr>`).join('') + '</table>';
+
+                const notifications = await apiCall('/agents/get-notifications');
+                document.getElementById('notifications').innerHTML = notifications.map(n => `
+                    <div class="notification-item">
+                        <span>${n.message}</span>
+                        <button class="mark-read-btn" onclick="markRead(${n._id})">Mark Read</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                alert('Error loading dashboard: ' + error.message);
+            }
+        }
+
+        function showCreateActivity() {
+            document.getElementById('create-activity-form').classList.remove('hidden');
+        }
+
+        function hideCreateActivity() {
+            document.getElementById('create-activity-form').classList.add('hidden');
+        }
+
+        function showCreateProperty() {
+            document.getElementById('create-property-form').classList.remove('hidden');
+        }
+
+        function hideCreateProperty() {
+            document.getElementById('create-property-form').classList.add('hidden');
+        }
+
+        function showCreateDeal() {
+            populateClientsAndProperties();
+            document.getElementById('create-deal-form').classList.remove('hidden');
+        }
+
+        function hideCreateDeal() {
+            document.getElementById('create-deal-form').classList.add('hidden');
+        }
+
+        document.getElementById('activity-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                type: document.getElementById('activity-type').value,
+                description: document.getElementById('activity-description').value,
+                date: document.getElementById('activity-date').value
+            };
+            try {
+                await apiCall('/activities/create-activity', 'POST', data);
+                hideCreateActivity();
+                loadDashboard();
+            } catch (error) {
+                alert('Error creating activity: ' + error.message);
+            }
+        });
+
+        async function populateClientsAndProperties() {
+            try {
+                const clients = await apiCall('/clients/get-clients');
+                const properties = await apiCall('/properties/get-properties');
+                const clientSelect = document.getElementById('deal-client');
+                const propertySelect = document.getElementById('deal-property');
+                clientSelect.innerHTML = '<option value="">Select Client</option>' +
+                    clients.map(c => `<option value="${c._id}">${c.name} (${c.type})</option>`).join('');
+                propertySelect.innerHTML = '<option value="">Select Property</option>' +
+                    properties.map(p => `<option value="${p._id}">${p.title} (${p.location})</option>`).join('');
+            } catch (error) {
+                alert('Error loading data: ' + error.message);
+            }
+        }
+
+        document.getElementById('property-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('property-title').value,
+                location: document.getElementById('property-location').value,
+                price: document.getElementById('property-price').value
+            };
+            try {
+                await apiCall('/properties/create-property', 'POST', data);
+                hideCreateProperty();
+                loadDashboard();
+            } catch (error) {
+                alert('Error creating property: ' + error.message);
+            }
+        });
+
+        document.getElementById('deal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                clientId: document.getElementById('deal-client').value,
+                propertyId: document.getElementById('deal-property').value
+            };
+            try {
+                await apiCall('/deals/create-deal', 'POST', data);
+                hideCreateDeal();
+                loadDashboard();
+            } catch (error) {
+                alert('Error creating deal: ' + error.message);
+            }
+        });
+
+        async function markRead(id) {
+            try {
+                await apiCall(`/agents/mark-notification-read/${id}`, 'PATCH');
+                loadDashboard();
+            } catch (error) {
+                alert('Error marking notification: ' + error.message);
+            }
+        }
+
+        if (localStorage.getItem('token')) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadDashboard();
+        }
+    </script>
+</body>
+</html>

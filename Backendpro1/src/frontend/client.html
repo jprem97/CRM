@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Client Portal</h1>
+        <div id="role-selection">
+            <h2>Are you a Seller or Buyer?</h2>
+            <button onclick="selectRole('seller')">Seller</button>
+            <button onclick="selectRole('buyer')">Buyer</button>
+        </div>
+        <form id="client-form" class="hidden">
+            <h2 id="form-title">Seller Details</h2>
+            <input type="text" id="name" name="name" placeholder="Name" required>
+            <input type="tel" id="phone" name="phone" placeholder="Phone" required>
+            <input type="text" id="preferredLocation" name="preferredLocation" placeholder="Preferred Location" required>
+            <div id="seller-fields">
+                <input type="text" id="propertyTitle" name="propertyTitle" placeholder="Property Title">
+                <input type="number" id="price" name="price" placeholder="Expected Price">
+            </div>
+            <div id="buyer-fields" class="hidden">
+                <input type="number" id="budget" name="budget" placeholder="Budget (optional)">
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="result" class="hidden">
+            <div id="result-content"></div>
+            <button onclick="resetForm()">Submit Another</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        let selectedRole = '';
+
+        function selectRole(role) {
+            selectedRole = role;
+            document.getElementById('role-selection').classList.add('hidden');
+            document.getElementById('client-form').classList.remove('hidden');
+            document.getElementById('form-title').textContent = role === 'seller' ? 'Seller Details' : 'Buyer Details';
+            if (role === 'seller') {
+                document.getElementById('seller-fields').classList.remove('hidden');
+                document.getElementById('buyer-fields').classList.add('hidden');
+                // Set seller fields as required
+                document.getElementById('propertyTitle').setAttribute('required', 'required');
+                document.getElementById('price').setAttribute('required', 'required');
+            } else {
+                document.getElementById('buyer-fields').classList.remove('hidden');
+                document.getElementById('seller-fields').classList.add('hidden');
+                // Remove required from seller fields
+                document.getElementById('propertyTitle').removeAttribute('required');
+                document.getElementById('price').removeAttribute('required');
+            }
+        }
+
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let price = null;
+            if (selectedRole === 'seller') {
+                price = document.getElementById('price').value ? parseFloat(document.getElementById('price').value) : null;
+            } else {
+                price = document.getElementById('budget').value ? parseFloat(document.getElementById('budget').value) : null;
+            }
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                preferredLocation: document.getElementById('preferredLocation').value,
+                type: selectedRole.toUpperCase(),
+                price: price
+            };
+            try {
+                const result = await apiCall('/clients/create-client', 'POST', data);
+                document.getElementById('client-form').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('result-content').innerHTML = `
+                    <div class="success-message">
+                        <h2>✅ Submission Successful!</h2>
+                        <p>Thank you! An agent has been assigned to you.</p>
+                        <p><strong>Client ID:</strong> ${result.client._id}</p>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('client-form').classList.add('hidden');
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('result-content').innerHTML = `
+                    <div class="error-message">
+                        <h2>❌ Submission Failed</h2>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('role-selection').classList.remove('hidden');
+            document.getElementById('client-form').reset();
+        }
+    </script>
+</body>
+</html>
