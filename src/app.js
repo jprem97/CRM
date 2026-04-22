@@ -31,8 +31,7 @@ app.use("/api/deals", dealRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/agents", agentRoutes);
 app.use("/api/admin", adminRoutes);
-const frontendPath = "C:\Users\Prem Jha\Downloads\frontend-react\dist";
-// Serve Frontend (frontend folder)
+// // Serve Frontend (frontend folder)
 // app.use(express.static(frontendPath));
 
 // // Root + fallback
