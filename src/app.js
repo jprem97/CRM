@@ -38,5 +38,7 @@ app.use("/api/admin", adminRoutes);
 // app.use((req, res) => {
 //   res.sendFile(path.join(frontendPath, "index.html"));
 // });
-
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
 export default app;
