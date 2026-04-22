@@ -54,11 +54,11 @@ export const createClient = async (req, res) => {
       $push: {
         notifications: {
           $each: [{
-            message: `New ${type} client: ${name}`,
+            message: `New ${type} client: ${name}  number : ${phone}`,
             type: "NEW_CLIENT",
             client: client._id,
             property: propertyId,   // FIX: was referencing undefined variable `propertyId`
-            status: "PENDING"
+            status: "PENDING",
           }],
           $position: 0
         }

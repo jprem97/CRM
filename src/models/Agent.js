@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema({
     ref: "Property",
     default: null
   },
+  
 
   // FIX: was using `read` field in controller but schema had no such field.
   // Changed to `status` with PENDING/COMPLETED — consistent with the enum already here.
