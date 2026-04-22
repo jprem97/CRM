@@ -15,15 +15,32 @@ export const getMyNotifications = async (req, res) => {
 };
 
 export const getMyProfile = async (req, res) => {
-  try {
-    const agent = await Agent.findOne({ user: req.user.id })
-      .populate("user");
-
+try {
+    const agent = await Agent.findOne({ user: req.user.id }).populate("user", "name email");
     if (!agent) {
       return res.status(404).json({ message: "Agent not found" });
     }
+    
+    res.json({
+      name: agent.user.name,
+      email: agent.user.email,
+      location: agent.location,
+      currentLoad: agent.currentLoad,
+      performanceScore: agent.performanceScore
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
-    res.json(agent);
+export const getNotifications = async (req, res) => {
+  try {
+    const agent = await Agent.findOne({ user: req.user.id });
+    if (!agent) return res.status(404).json({ message: "Agent not found" });
+    
+    // Only return PENDING notifications
+    const activeNotifications = agent.notifications.filter(n => n.status === "PENDING");
+    res.json(activeNotifications);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
