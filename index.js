@@ -10,8 +10,8 @@ dotenv.config({
   debug:true
 });
 
-import connectDB from "./db/index.js";
-import app from "./app.js"; // ✔ fixed
+import connectDB from "./src/db/index.js";
+import app from "./src/app.js" // ✔ fixed
 
 connectDB()
   .then(() => {
