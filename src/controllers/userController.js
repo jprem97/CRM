@@ -64,7 +64,7 @@ export const register = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res
+    res    
       .cookie("accessToken", accessToken, {
         httpOnly: true,
         sameSite: "lax",
